@@ -33,7 +33,7 @@ x-api-key: YOUR_API_KEY
 
 Error shape (example):
 
-```json
+```javascript
 {
   "status": false,
   "message": "Error details"
@@ -70,7 +70,7 @@ curl -X POST "https://progress-api.dev.track3d.ai/v1/users/signin" \
 
 **Response `201` (example)**
 
-```json
+```javascript
 {
   "success": true,
   "result": {
