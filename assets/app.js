@@ -12,17 +12,22 @@
   if (mainMatch && mainMatch[1]) md = mainMatch[1];
   md = md.replace(/<div[^>]*class=["']?doc["']?[^>]*>/gi, '').replace(/<\/div>\s*$/i, '');
 
-  // Mark endpoint lines for styling later
-  md = md.replace(/^\*\*(GET|POST|PUT|PATCH|DELETE)\*\*\s+(`?\/[\w\-\/{}]+`?)/gmi, '::endpoint::$1::$2');
+  // Mark endpoint lines for styling later (capture description after path)
+  md = md.replace(/^\*\*(GET|POST|PUT|PATCH|DELETE)\*\*\s+(`?\/[\w\-\/{}]+`?)(.*)$/gmi, '::endpoint::$1::$2::$3');
 
   const html = marked.parse(md, { mangle: false, headerIds: true });
   contentEl.innerHTML = html;
 
-  // Endpoint transform
+  // Endpoint transform with description
   contentEl.querySelectorAll('p').forEach(p => {
     if (p.textContent.startsWith('::endpoint::')) {
-      const [, method, pathRaw] = p.textContent.split('::');
+      const parts = p.textContent.split('::');
+      const method = parts[1];
+      const pathRaw = parts[2];
+      const descRaw = (parts[3] || '').trim();
       const path = pathRaw.replace(/^`|`$/g, '');
+
+      const container = document.createElement('div');
       const div = document.createElement('div');
       div.className = 'endpoint';
       const methodSpan = document.createElement('span');
@@ -37,7 +42,17 @@
       pathSpan.textContent = path;
       div.appendChild(methodSpan);
       div.appendChild(pathSpan);
-      p.replaceWith(div);
+      container.appendChild(div);
+
+      const desc = descRaw.replace(/^[-–—:\s]+/, '');
+      if (desc) {
+        const dp = document.createElement('p');
+        dp.className = 'endpoint-desc';
+        dp.textContent = desc;
+        container.appendChild(dp);
+      }
+
+      p.replaceWith(container);
     }
   });
 
