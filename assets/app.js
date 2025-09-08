@@ -63,30 +63,23 @@
     }
   });
 
-  // Highlight + copy
+  // Infer languages for code blocks, then highlight all
+  contentEl.querySelectorAll('pre code').forEach(codeEl => {
+    const hasLang = /language-/.test(codeEl.className);
+    const text = codeEl.innerText.trim();
+    if (!hasLang) {
+      if (text.startsWith('{') || text.startsWith('[')) codeEl.classList.add('language-json');
+      else if (/^curl\s/i.test(text) || /^#!/.test(text)) codeEl.classList.add('language-bash');
+      else if (/\bGET\b|\bPOST\b|\bPUT\b|\bDELETE\b/.test(text) && /https?:\/\//.test(text)) codeEl.classList.add('language-bash');
+    }
+  });
+  if (window.hljs && window.hljs.highlightAll) {
+    window.hljs.highlightAll();
+  }
+
+  // Copy buttons
   contentEl.querySelectorAll('pre').forEach(pre => {
     const codeEl = pre.querySelector('code');
-    if (codeEl) {
-      // Infer language if missing
-      const hasLang = /language-/.test(codeEl.className);
-      const text = codeEl.innerText.trim();
-      if (!hasLang) {
-        if (text.startsWith('{') || text.startsWith('[')) {
-          codeEl.classList.add('language-json');
-        } else if (/^curl\s/i.test(text)) {
-          codeEl.classList.add('language-bash');
-        } else if (/^#\!\//.test(text)) {
-          codeEl.classList.add('language-bash');
-        }
-      }
-      codeEl.classList.add('hljs');
-      if (window.hljs) {
-        try {
-          if (/language-/.test(codeEl.className)) window.hljs.highlightElement(codeEl);
-          else { const r = window.hljs.highlightAuto(text); codeEl.innerHTML = r.value; }
-        } catch(e) {}
-      }
-    }
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16.5h8m-8-4h8m-8-4h8M6 19.5A2.25 2.25 0 013.75 17.25V6.75A2.25 2.25 0 016 4.5h9A2.25 2.25 0 0117.25 6.75v10.5A2.25 2.25 0 0115 19.5H6z"/></svg><span>Copy</span>';
