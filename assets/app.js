@@ -73,8 +73,18 @@
   // Syntax highlight and Copy buttons to code blocks
   contentEl.querySelectorAll('pre').forEach(pre => {
     const codeEl = pre.querySelector('code');
-    if (window.hljs && codeEl) {
-      try { window.hljs.highlightElement(codeEl); } catch(e) {}
+    if (codeEl) {
+      codeEl.classList.add('hljs');
+      if (window.hljs) {
+        try {
+          if (codeEl.className.match(/language-/)) {
+            window.hljs.highlightElement(codeEl);
+          } else {
+            const result = window.hljs.highlightAuto(codeEl.innerText);
+            codeEl.innerHTML = result.value;
+          }
+        } catch(e) {}
+      }
     }
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
