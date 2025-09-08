@@ -12,13 +12,13 @@
   if (mainMatch && mainMatch[1]) md = mainMatch[1];
   md = md.replace(/<div[^>]*class=["']?doc["']?[^>]*>/gi, '').replace(/<\/div>\s*$/i, '');
 
-  // Transform lines like '**GET** /foo' into a placeholder we can style after rendering
+  // Mark endpoint lines for styling later
   md = md.replace(/^\*\*(GET|POST|PUT|PATCH|DELETE)\*\*\s+(`?\/[\w\-\/{}]+`?)/gmi, '::endpoint::$1::$2');
 
   const html = marked.parse(md, { mangle: false, headerIds: true });
   contentEl.innerHTML = html;
 
-  // Replace placeholders with styled blocks
+  // Endpoint transform
   contentEl.querySelectorAll('p').forEach(p => {
     if (p.textContent.startsWith('::endpoint::')) {
       const [, method, pathRaw] = p.textContent.split('::');
@@ -67,11 +67,23 @@
   contentEl.querySelectorAll('pre').forEach(pre => {
     const codeEl = pre.querySelector('code');
     if (codeEl) {
+      // Infer language if missing
+      const hasLang = /language-/.test(codeEl.className);
+      const text = codeEl.innerText.trim();
+      if (!hasLang) {
+        if (text.startsWith('{') || text.startsWith('[')) {
+          codeEl.classList.add('language-json');
+        } else if (/^curl\s/i.test(text)) {
+          codeEl.classList.add('language-bash');
+        } else if (/^#\!\//.test(text)) {
+          codeEl.classList.add('language-bash');
+        }
+      }
       codeEl.classList.add('hljs');
       if (window.hljs) {
         try {
-          if (codeEl.className.match(/language-/)) window.hljs.highlightElement(codeEl);
-          else { const r = window.hljs.highlightAuto(codeEl.innerText); codeEl.innerHTML = r.value; }
+          if (/language-/.test(codeEl.className)) window.hljs.highlightElement(codeEl);
+          else { const r = window.hljs.highlightAuto(text); codeEl.innerHTML = r.value; }
         } catch(e) {}
       }
     }
@@ -86,6 +98,5 @@
     pre.appendChild(btn);
   });
 
-  // Footer year
   const y = document.getElementById('year'); if (y) y.textContent = String(new Date().getFullYear());
 })();
