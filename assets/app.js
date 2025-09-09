@@ -83,13 +83,53 @@
     const hasLang = /language-/.test(codeEl.className);
     const text = codeEl.innerText.trim();
     if (!hasLang) {
-      if (text.startsWith('{') || text.startsWith('[')) codeEl.classList.add('language-json');
-      else if (/^curl\s/i.test(text) || /^#!/.test(text)) codeEl.classList.add('language-bash');
-      else if (/\bGET\b|\bPOST\b|\bPUT\b|\bDELETE\b/.test(text) && /https?:\/\//.test(text)) codeEl.classList.add('language-bash');
+      // JSON detection
+      if (text.startsWith('{') || text.startsWith('[')) {
+        codeEl.classList.add('language-json');
+      }
+      // Bash/Shell detection
+      else if (/^curl\s/i.test(text) || /^#!/.test(text) || /^\$/.test(text)) {
+        codeEl.classList.add('language-bash');
+      }
+      // HTTP requests detection
+      else if (/\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/i.test(text) && /https?:\/\//.test(text)) {
+        codeEl.classList.add('language-bash');
+      }
+      // JavaScript detection
+      else if (/function\s+\w+|const\s+\w+|let\s+\w+|var\s+\w+/.test(text)) {
+        codeEl.classList.add('language-javascript');
+      }
+      // Python detection
+      else if (/def\s+\w+|import\s+\w+|from\s+\w+|print\s*\(/.test(text)) {
+        codeEl.classList.add('language-python');
+      }
+      // Default to plain text if no pattern matches
+      else {
+        codeEl.classList.add('language-plaintext');
+      }
     }
   });
+  // Apply syntax highlighting
   if (window.hljs && window.hljs.highlightAll) {
-    window.hljs.highlightAll();
+    try {
+      window.hljs.highlightAll();
+      console.log('Syntax highlighting applied successfully');
+    } catch (error) {
+      console.error('Error applying syntax highlighting:', error);
+    }
+  } else {
+    console.warn('Highlight.js not loaded or available');
+    // Fallback: try again after a short delay
+    setTimeout(() => {
+      if (window.hljs && window.hljs.highlightAll) {
+        try {
+          window.hljs.highlightAll();
+          console.log('Syntax highlighting applied on retry');
+        } catch (error) {
+          console.error('Error applying syntax highlighting on retry:', error);
+        }
+      }
+    }, 100);
   }
 
   // Copy buttons
@@ -97,11 +137,26 @@
     const codeEl = pre.querySelector('code');
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16.5h8m-8-4h8m-8-4h8M6 19.5A2.25 2.25 0 013.75 17.25V6.75A2.25 2.25 0 016 4.5h9A2.25 2.25 0 0117.25 6.75v10.5A2.25 2.25 0 0115 19.5H6z"/></svg><span>Copy</span>';
+    btn.innerHTML = '<img src="copy.png" alt="Copy" />';
     btn.addEventListener('click', async () => {
       const text = codeEl ? codeEl.innerText : pre.innerText;
-      try { await navigator.clipboard.writeText(text); btn.querySelector('span').textContent = 'Copied!'; setTimeout(() => (btn.querySelector('span').textContent = 'Copy'), 1200); }
-      catch { btn.querySelector('span').textContent = 'Failed'; setTimeout(() => (btn.querySelector('span').textContent = 'Copy'), 1200); }
+      try { 
+        await navigator.clipboard.writeText(text); 
+        btn.style.opacity = '0.6';
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          btn.style.opacity = '1';
+          btn.style.transform = 'scale(1)';
+        }, 200); 
+      }
+      catch { 
+        btn.style.opacity = '0.6';
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          btn.style.opacity = '1';
+          btn.style.transform = 'scale(1)';
+        }, 200); 
+      }
     });
     pre.appendChild(btn);
   });
